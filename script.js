@@ -1,5 +1,41 @@
 const API = "https://w8dac3s836.execute-api.ap-south-1.amazonaws.com";
 
+// -------- FORMAT FILE NAME --------
+function formatFileName(name) {
+  if (!name) return 'Document';
+  
+  let ext = '';
+  const extIndex = name.lastIndexOf('.');
+  if (extIndex > -1) {
+    ext = name.substring(extIndex);
+    name = name.substring(0, extIndex);
+  }
+
+  // Clean Formats: "Semester 4" -> "Sem4"
+  name = name.replace(/Semester\s*/gi, 'Sem');
+  name = name.replace(/SemSem/gi, 'Sem');
+
+  // Remove UUIDs
+  name = name.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '');
+  
+  // Remove MongoDB ObjectIds (24 hex chars)
+  name = name.replace(/[0-9a-f]{24}/gi, '');
+
+  // Remove trailing/leading timestamps (10 to 14 digits)
+  name = name.replace(/(^[-_]?\d{10,14}[-_]?|[-_]?\d{10,14}$)/g, '');
+  
+  // Remove trailing/leading alphanumeric random strings (20+ chars)
+  name = name.replace(/(^[-_]?[a-zA-Z0-9]{20,}[-_]?|[-_]?[a-zA-Z0-9]{20,}$)/g, '');
+
+  // Clean trailing/leading/multiple dashes and underscores
+  name = name.replace(/[-_]{2,}/g, '_').replace(/^[-_]+|[-_]+$/g, '');
+
+  // If we accidentally removed everything, give a fallback
+  if (!name.trim()) name = 'Document';
+
+  return name + ext;
+}
+
 // -------- TOAST COMPONENT --------
 function showToast(message, type = "info") {
   const container = document.getElementById("toast-container") || createToastContainer();
@@ -158,7 +194,7 @@ document.getElementById("uploadForm").addEventListener("submit", async (e) => {
       body: JSON.stringify({
         file: base64,
         file_name: file.name,
-        file_type: file.name.split('.').pop(),
+        file_type: "application/pdf",
         subject_code: subCode,
         subject_name: subName,
         semester: sem,
@@ -197,9 +233,7 @@ function up_onSemesterChange() {
 
   // Populate subjects based on existing data
   const filtered = allNotesData.filter(n => {
-    const s1 = n.semester ? n.semester.toString().toLowerCase().trim() : "";
-    const s2 = sem.toLowerCase().trim();
-    return s1 === s2 || s2.includes(s1) || s1.includes(s2.replace("semester", "").trim());
+    return String(n.semester).trim() === String(sem).trim();
   });
 
   const grouped = {};
@@ -338,9 +372,7 @@ function renderSubjects() {
 
   // Filter notes by semester
   const filteredNotes = allNotesData.filter(n => {
-    const sem = n.semester ? n.semester.toString().toLowerCase().trim() : "";
-    const sel = selectedSemester.toLowerCase().trim();
-    return sem === sel || sel.includes(sem) || sem.includes(sel.replace("semester", "").trim());
+    return String(n.semester).trim() === String(selectedSemester).trim();
   });
 
   if (filteredNotes.length === 0) {
@@ -390,14 +422,21 @@ function renderSubjects() {
         htmlString += `<div class="empty-state" style="padding: 1rem; font-size: 0.85rem; margin: 0;">No PDFs uploaded for this unit.</div>`;
       } else {
         unitDocs.forEach(n => {
+          const cleanName = formatFileName(n.file_name);
           htmlString += `
-            <div class="card" style="margin: 0; padding: 0.75rem 1rem;">
-              <div class="card-info">
-                <div class="card-title" style="margin-bottom: 0;">${n.file_name || 'Document'}</div>
+            <div class="card file-card">
+              <div class="card-info" style="overflow: hidden; display: flex; align-items: center; gap: 0.75rem;">
+                <div class="file-icon">📄</div>
+                <div style="min-width: 0; flex: 1;">
+                   <div class="card-title text-truncate" title="${cleanName}">${cleanName}</div>
+                   <div class="card-subtitle"><span class="badge-pdf">PDF</span> ${n.subject_code} • Unit ${n.unit_no}</div>
+                </div>
               </div>
-              <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <a href="${n.file_url}" target="_blank" class="btn-open">📄 Open</a>
-                ${isAdmin ? `<button onclick="deleteNote('${n.id}')" class="btn-danger" style="padding: 0.5rem 1rem; font-size: 0.85rem;">🗑 Delete</button>` : ''}
+              <div class="file-actions">
+                <a href="${n.file_url}" target="_blank" class="btn-open btn-rounded">Open</a>
+                ${isAdmin ? `<button onclick="deleteNote('${n.id}')" class="btn-danger btn-icon btn-reject" title="Delete">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                </button>` : ''}
               </div>
             </div>
           `;
@@ -413,6 +452,9 @@ function renderSubjects() {
     htmlString += `</div></details>`;
   }
   div.innerHTML = htmlString;
+  
+  // Trigger reveal animation for newly added elements
+  if (window.observeElements) setTimeout(window.observeElements, 50);
 }
 
 // -------- PENDING --------
@@ -431,17 +473,24 @@ async function loadPending() {
 
     let htmlString = "";
     data.forEach(n => {
+      const cleanName = formatFileName(n.file_name);
       htmlString += `
         <div class="pending-card">
-          <div class="card-info">
-            <div class="card-title">${n.subject_code} - ${n.subject_name}</div>
-            <div class="card-subtitle" style="margin-top:0.25rem; color:var(--text-muted);">Unit ${n.unit_no} • ${n.unit_name}</div>
+          <div class="card-info" style="margin-bottom: 0.75rem;">
+            <div class="card-title text-truncate" title="${cleanName}" style="font-size: 1.05rem; margin-bottom: 0.5rem;">📄 ${cleanName}</div>
+            <div class="card-subtitle" style="color:var(--text-muted);">
+              <span class="badge-pdf">PDF</span> ${n.subject_code} - ${n.subject_name} <br>
+              <span style="font-size: 0.8rem; opacity: 0.8;">Unit ${n.unit_no} • ${n.unit_name}</span>
+            </div>
           </div>
 
           <div class="pending-actions">
-            <a href="${n.file_url}" target="_blank" class="btn-outline" style="text-decoration:none;">👁 Preview</a>
-            <button class="btn-success" onclick="approve('${n.id}')">Approve</button>
-            <button class="btn-danger" onclick="reject('${n.id}')">Reject</button>
+            <a href="${n.file_url}" target="_blank" class="btn-outline btn-rounded" style="text-decoration:none;">👁 Preview</a>
+            <button class="btn-success btn-rounded" onclick="approve('${n.id}', this)">✅ Approve</button>
+            <button class="btn-danger btn-rounded btn-reject" onclick="reject('${n.id}', this)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; margin-bottom: -2px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+              Reject
+            </button>
           </div>
         </div>
       `;
@@ -450,45 +499,109 @@ async function loadPending() {
   } catch(e) {
     document.getElementById("pendingList").innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;">Failed to load pending notes.</div>`;
   }
+  
+  // Trigger reveal animation for newly added elements
+  if (window.observeElements) setTimeout(window.observeElements, 50);
 }
 
 // -------- APPROVE --------
-async function approve(id) {
+async function approve(id, btnElement) {
+  if (btnElement) {
+    btnElement.disabled = true;
+    btnElement.innerHTML = "⏳ Approving...";
+  }
+
   try {
-    await fetch(API + "/approve", {
+    const res = await fetch(API + "/approve", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ id })
     });
 
-    loadPending();
-    loadNotes();
+    if (!res.ok) throw new Error("API Error");
+
+    showToast("Approved Successfully", "success");
+    
+    if (btnElement) {
+      const card = btnElement.closest('.pending-card');
+      if (card) {
+        card.style.transition = 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.9)';
+        setTimeout(() => {
+          card.remove();
+          checkEmptyPending();
+        }, 300);
+      } else {
+        loadPending();
+      }
+    } else {
+      loadPending();
+    }
+    loadNotes(); // Update notes listing in background
   } catch(e) {
-    showToast("Error approving logic.", "error");
+    showToast("Error approving note.", "error");
+    if (btnElement) {
+      btnElement.disabled = false;
+      btnElement.innerHTML = "✅ Approve";
+    }
   }
 }
 
 // -------- REJECT --------
-async function reject(id) {
+async function reject(id, btnElement) {
+  if (btnElement) {
+    btnElement.disabled = true;
+    btnElement.innerHTML = "⏳ Rejecting...";
+  }
+
   try {
-    await fetch(API + "/reject", {
+    const res = await fetch(API + "/reject", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ id })
     });
 
-    loadPending();
+    if (!res.ok) throw new Error("API Error");
+
+    showToast("Rejected Successfully", "error");
+    
+    if (btnElement) {
+      const card = btnElement.closest('.pending-card');
+      if (card) {
+        card.style.transition = 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.8)';
+        setTimeout(() => {
+          card.remove();
+          checkEmptyPending();
+        }, 300);
+      } else {
+        loadPending();
+      }
+    } else {
+      loadPending();
+    }
+    loadNotes(); // Dynamically update main list to avoid stale data
   } catch(e) {
     showToast("Error rejecting note.", "error");
+    if (btnElement) {
+      btnElement.disabled = false;
+      btnElement.innerHTML = "🗑️ Reject";
+    }
+  }
+}
+
+// -------- Helper to show empty state if all removed --------
+function checkEmptyPending() {
+  const div = document.getElementById("pendingList");
+  if (div && div.querySelectorAll('.pending-card').length === 0) {
+    div.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1; animation: fadeInScale 0.4s ease-out forwards;">No pending notes for approval.</div>`;
   }
 }
 
 // -------- DELETE --------
 async function deleteNote(id) {
-  if (!confirm("Are you sure you want to delete this note?")) {
-    return;
-  }
-
   try {
     await fetch(API + "/delete", {
       method: "POST",
@@ -496,6 +609,7 @@ async function deleteNote(id) {
       body: JSON.stringify({ id })
     });
 
+    showToast("Note Deleted", "error");
     loadNotes();
     const user = localStorage.getItem("user_email");
     if (user === "3107aloksingh@gmail.com") {
@@ -505,3 +619,38 @@ async function deleteNote(id) {
     showToast("Error deleting note.", "error");
   }
 }
+
+// -------- SCROLL REVEAL ANIMATION --------
+const observerOptions = {
+  threshold: 0.1,
+  rootMargin: "0px 0px -20px 0px"
+};
+
+const revealObserver = new IntersectionObserver((entries, observer) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add("reveal-visible");
+      observer.unobserve(entry.target);
+    }
+  });
+}, observerOptions);
+
+window.observeElements = () => {
+  document.querySelectorAll('.card, .subject-box, .pending-card, .panel').forEach(el => {
+    if (!el.classList.contains("reveal-visible") && !el.classList.contains("reveal-hidden")) {
+      el.classList.add("reveal-hidden");
+      revealObserver.observe(el);
+    }
+  });
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(window.observeElements, 100);
+});
+
+// Patch showSection to re-observe when switching tabs
+const originalShowSection = window.showSection;
+window.showSection = function(sectionId) {
+  if (originalShowSection) originalShowSection(sectionId);
+  setTimeout(window.observeElements, 50);
+};

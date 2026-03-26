@@ -10,6 +10,7 @@
 
 <body>
 
+<div class="page-wrapper">
 <!-- 🔐 LOGIN -->
 <div id="loginDiv">
   <div class="login-box">
@@ -18,11 +19,11 @@
     <input id="password" type="password" placeholder="Password">
     <button class="btn-primary" onclick="login()">Log In</button>
     <p>
-      New user? 
-      <a href="https://ap-south-1ohbqo6utl.auth.ap-south-1.amazoncognito.com/login?client_id=5od2a8lalfgpjgo3271g92lgh6&response_type=code&scope=email+openid+phone&redirect_uri=https://127.0.0.1:5501/">
-        Create Account
-      </a>
-    </p>
+  New user? 
+  <a href="https://ap-south-1ohbqo6utl.auth.ap-south-1.amazoncognito.com/signup?client_id=5od2a8lalfgpjgo3271g92lgh6&redirect_uri=http%3A%2F%2Flocalhost%3A5501%2F&response_type=code&scope=email+openid+phone">
+    Create Account
+  </a>
+</p>
   </div>
 </div>
 
@@ -66,8 +67,14 @@
       <div id="semesterFilter" style="margin-bottom: 1.5rem;">
         <select id="semesterSelect" class="semester-select" onchange="renderSubjects()">
           <option value="" disabled selected>Select Semester</option>
-          <option value="Semester 3">Semester 3</option>
-          <option value="Semester 4">Semester 4</option>
+          <option value="1">Semester 1</option>
+          <option value="2">Semester 2</option>  
+          <option value="3">Semester 3</option>
+          <option value="4">Semester 4</option>
+          <option value="5">Semester 5</option>
+          <option value="6">Semester 6</option>
+          <option value="7">Semester 7</option>
+          <option value="8">Semester 8</option>
         </select>
       </div>
 
@@ -90,8 +97,14 @@
         <!-- Step 1: Semester -->
         <select id="up_semester" class="semester-select" onchange="up_onSemesterChange()" required>
           <option value="" disabled selected>1. Select Semester</option>
-          <option value="Semester 3">Semester 3</option>
-          <option value="Semester 4">Semester 4</option>
+          <option value="1">Semester 1</option>
+          <option value="2">Semester 2</option>  
+          <option value="3">Semester 3</option>
+          <option value="4">Semester 4</option>
+          <option value="5">Semester 5</option>
+          <option value="6">Semester 6</option>
+          <option value="7">Semester 7</option>
+          <option value="8">Semester 8</option>
         </select>
 
         <!-- Step 2: Subject -->
@@ -144,8 +157,15 @@
   </div>
 
 </div>
+</div>
 
 <script src="script.js"></script>
+
+<!-- App Footer -->
+<footer class="app-footer">
+  <p>© 2026 EduNexa | All Rights Reserved</p>
+  <p>Developed by Alok Singh & Amit Kumar</p>
+</footer>
 
 </body>
 </html>
