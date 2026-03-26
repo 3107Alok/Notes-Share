@@ -3,7 +3,7 @@ const API = "https://w8dac3s836.execute-api.ap-south-1.amazonaws.com";
 // -------- FORMAT FILE NAME --------
 function formatFileName(name) {
   if (!name) return 'Document';
-  
+
   let ext = '';
   const extIndex = name.lastIndexOf('.');
   if (extIndex > -1) {
@@ -17,13 +17,13 @@ function formatFileName(name) {
 
   // Remove UUIDs
   name = name.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '');
-  
+
   // Remove MongoDB ObjectIds (24 hex chars)
   name = name.replace(/[0-9a-f]{24}/gi, '');
 
   // Remove trailing/leading timestamps (10 to 14 digits)
   name = name.replace(/(^[-_]?\d{10,14}[-_]?|[-_]?\d{10,14}$)/g, '');
-  
+
   // Remove trailing/leading alphanumeric random strings (20+ chars)
   name = name.replace(/(^[-_]?[a-zA-Z0-9]{20,}[-_]?|[-_]?[a-zA-Z0-9]{20,}$)/g, '');
 
@@ -39,10 +39,10 @@ function formatFileName(name) {
 // -------- TOAST COMPONENT --------
 function showToast(message, type = "info") {
   const container = document.getElementById("toast-container") || createToastContainer();
-  
+
   const toast = document.createElement("div");
   toast.className = `toast ${type}`;
-  
+
   let icon = "ℹ️";
   if (type === "success") icon = "✅";
   if (type === "error") icon = "❌";
@@ -50,14 +50,14 @@ function showToast(message, type = "info") {
 
   toast.innerHTML = `<span class="toast-icon">${icon}</span> <span>${message}</span>`;
   container.appendChild(toast);
-  
+
   // Trigger animation
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       toast.classList.add("show");
     });
   });
-  
+
   setTimeout(() => {
     toast.classList.remove("show");
     setTimeout(() => toast.remove(), 400); // Wait for transition
@@ -87,16 +87,16 @@ function showSection(sectionId) {
   document.getElementById('uploadSection').style.display = 'none';
   document.getElementById('notesSection').style.display = 'none';
   document.getElementById('adminSection').style.display = 'none';
-  
+
   document.getElementById(sectionId).style.display = 'block';
 
   document.getElementById('btnHome').className = sectionId === 'homeSection' ? 'btn-primary' : 'btn-outline';
   document.getElementById('btnNotes').className = sectionId === 'notesSection' ? 'btn-primary' : 'btn-outline';
   document.getElementById('btnUpload').className = sectionId === 'uploadSection' ? 'btn-primary' : 'btn-outline';
-  
+
   const user = localStorage.getItem("user_email");
   const ADMIN_EMAIL = "3107aloksingh@gmail.com";
-  
+
   if (user === ADMIN_EMAIL) {
     document.getElementById('btnAdmin').className = sectionId === 'adminSection' ? 'btn-primary' : 'btn-outline';
   }
@@ -116,7 +116,7 @@ function checkRole() {
   } else {
     btnAdmin.style.display = "none";
   }
-  
+
   showSection('homeSection');
 }
 
@@ -158,7 +158,7 @@ document.getElementById("uploadForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const fileInput = document.getElementById("file");
-  if(!fileInput.files.length) {
+  if (!fileInput.files.length) {
     showToast("Please select a file to upload.", "error");
     return;
   }
@@ -190,7 +190,7 @@ document.getElementById("uploadForm").addEventListener("submit", async (e) => {
 
     await fetch(API + "/upload", {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         file: base64,
         file_name: file.name,
@@ -209,17 +209,17 @@ document.getElementById("uploadForm").addEventListener("submit", async (e) => {
     } else {
       showToast("Waiting for approval ⏳", "waiting");
     }
-    
+
     document.getElementById("uploadForm").reset();
-    
+
     // Reset flow UI
     document.getElementById("up_subject").style.display = "none";
     document.getElementById("up_subject_manual").style.display = "none";
     document.getElementById("up_unit").style.display = "none";
     const upUnitNameDiv = document.getElementById("up_unit_name_div");
-    if(upUnitNameDiv) upUnitNameDiv.style.display = "none";
+    if (upUnitNameDiv) upUnitNameDiv.style.display = "none";
     document.getElementById("up_file_div").style.display = "none";
-    
+
     loadNotes();
   };
 
@@ -244,7 +244,7 @@ function up_onSemesterChange() {
 
   const upSubject = document.getElementById("up_subject");
   upSubject.innerHTML = '<option value="" disabled selected>2. Select Subject</option>';
-  
+
   Object.keys(grouped).forEach(k => {
     const opt = document.createElement("option");
     opt.value = k;
@@ -261,18 +261,18 @@ function up_onSemesterChange() {
   document.getElementById("up_subject_manual").style.display = "none";
   document.getElementById("up_unit").style.display = "none";
   const upUnitNameDiv = document.getElementById("up_unit_name_div");
-  if(upUnitNameDiv) upUnitNameDiv.style.display = "none";
+  if (upUnitNameDiv) upUnitNameDiv.style.display = "none";
   document.getElementById("up_file_div").style.display = "none";
-  
+
   upSubject.value = "";
   document.getElementById("up_unit").value = "";
   const unitNameDisp = document.getElementById("up_unit_name_display");
-  if(unitNameDisp) unitNameDisp.value = "";
+  if (unitNameDisp) unitNameDisp.value = "";
 }
 
 function up_onSubjectChange() {
   const val = document.getElementById("up_subject").value;
-  
+
   if (val === "OTHER") {
     document.getElementById("up_subject_manual").style.display = "flex";
     document.getElementById("subject_code").value = document.getElementById("manual_subject_code").value;
@@ -286,11 +286,11 @@ function up_onSubjectChange() {
 
   document.getElementById("up_unit").style.display = "block";
   const upUnitNameDiv = document.getElementById("up_unit_name_div");
-  if(upUnitNameDiv) upUnitNameDiv.style.display = "none";
+  if (upUnitNameDiv) upUnitNameDiv.style.display = "none";
   document.getElementById("up_file_div").style.display = "none";
   document.getElementById("up_unit").value = "";
   const unitNameDisp = document.getElementById("up_unit_name_display");
-  if(unitNameDisp) unitNameDisp.value = "";
+  if (unitNameDisp) unitNameDisp.value = "";
 }
 
 function up_updateManualSubject() {
@@ -301,19 +301,19 @@ function up_updateManualSubject() {
 function up_onUnitChange() {
   const unitNum = document.getElementById("up_unit").value;
   document.getElementById("unit_no").value = unitNum;
-  
+
   const unitNameDiv = document.getElementById("up_unit_name_div");
   const unitNameDisplay = document.getElementById("up_unit_name_display");
   const unitLockedLabel = document.getElementById("unit_locked_label");
-  
+
   unitNameDiv.style.display = "flex";
-  
+
   const subCode = document.getElementById("subject_code").value;
-  
+
   // Find if this unit already has approved notes
-  const existingNote = allNotesData.find(n => 
-    n.subject_code === subCode && 
-    String(n.unit_no) === String(unitNum) && 
+  const existingNote = allNotesData.find(n =>
+    n.subject_code === subCode &&
+    String(n.unit_no) === String(unitNum) &&
     (n.status === 'approved' || n.status === undefined)
   );
 
@@ -321,7 +321,7 @@ function up_onUnitChange() {
     // Lock the input
     unitNameDisplay.value = existingNote.unit_name;
     document.getElementById("unit_name").value = existingNote.unit_name;
-    
+
     unitNameDisplay.readOnly = true;
     unitNameDisplay.style.opacity = "0.7";
     unitNameDisplay.style.cursor = "not-allowed";
@@ -330,7 +330,7 @@ function up_onUnitChange() {
     // Unlock for user entry
     unitNameDisplay.value = "";
     document.getElementById("unit_name").value = "";
-    
+
     unitNameDisplay.readOnly = false;
     unitNameDisplay.style.opacity = "1";
     unitNameDisplay.style.cursor = "text";
@@ -352,7 +352,7 @@ async function loadNotes() {
     const res = await fetch(API + "/notes");
     allNotesData = await res.json();
     renderSubjects();
-  } catch(e) {
+  } catch (e) {
     document.getElementById("notesList").innerHTML = `<div class="empty-state">Failed to load notes.</div>`;
   }
 }
@@ -389,7 +389,7 @@ function renderSubjects() {
   });
 
   const subjectKeys = Object.keys(groupedBySubject);
-  
+
   let htmlString = "";
   for (let subject of subjectKeys) {
     htmlString += `
@@ -402,9 +402,9 @@ function renderSubjects() {
     for (let u = 1; u <= 5; u++) {
       const unitDocs = groupedBySubject[subject].filter(n => parseInt(n.unit_no) === u);
       const unitName = (unitDocs.length > 0 && unitDocs[0].unit_name) ? unitDocs[0].unit_name : `Unit ${u}`;
-      
-      const badgeHtml = unitDocs.length > 0 
-        ? `<span class="unit-badge">${unitDocs.length} PDF${unitDocs.length > 1 ? 's' : ''}</span>` 
+
+      const badgeHtml = unitDocs.length > 0
+        ? `<span class="unit-badge">${unitDocs.length} PDF${unitDocs.length > 1 ? 's' : ''}</span>`
         : `<span class="unit-empty">(No PDFs)</span>`;
 
       htmlString += `
@@ -417,7 +417,7 @@ function renderSubjects() {
           </summary>
           <div class="unit-content">
       `;
-      
+
       if (unitDocs.length === 0) {
         htmlString += `<div class="empty-state" style="padding: 1rem; font-size: 0.85rem; margin: 0;">No PDFs uploaded for this unit.</div>`;
       } else {
@@ -442,7 +442,7 @@ function renderSubjects() {
           `;
         });
       }
-      
+
       htmlString += `
           </div>
         </details>
@@ -452,7 +452,7 @@ function renderSubjects() {
     htmlString += `</div></details>`;
   }
   div.innerHTML = htmlString;
-  
+
   // Trigger reveal animation for newly added elements
   if (window.observeElements) setTimeout(window.observeElements, 50);
 }
@@ -496,10 +496,10 @@ async function loadPending() {
       `;
     });
     div.innerHTML = htmlString;
-  } catch(e) {
+  } catch (e) {
     document.getElementById("pendingList").innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;">Failed to load pending notes.</div>`;
   }
-  
+
   // Trigger reveal animation for newly added elements
   if (window.observeElements) setTimeout(window.observeElements, 50);
 }
@@ -514,14 +514,14 @@ async function approve(id, btnElement) {
   try {
     const res = await fetch(API + "/approve", {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id })
     });
 
     if (!res.ok) throw new Error("API Error");
 
     showToast("Approved Successfully", "success");
-    
+
     if (btnElement) {
       const card = btnElement.closest('.pending-card');
       if (card) {
@@ -539,7 +539,7 @@ async function approve(id, btnElement) {
       loadPending();
     }
     loadNotes(); // Update notes listing in background
-  } catch(e) {
+  } catch (e) {
     showToast("Error approving note.", "error");
     if (btnElement) {
       btnElement.disabled = false;
@@ -558,14 +558,14 @@ async function reject(id, btnElement) {
   try {
     const res = await fetch(API + "/reject", {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id })
     });
 
     if (!res.ok) throw new Error("API Error");
 
     showToast("Rejected Successfully", "error");
-    
+
     if (btnElement) {
       const card = btnElement.closest('.pending-card');
       if (card) {
@@ -583,7 +583,7 @@ async function reject(id, btnElement) {
       loadPending();
     }
     loadNotes(); // Dynamically update main list to avoid stale data
-  } catch(e) {
+  } catch (e) {
     showToast("Error rejecting note.", "error");
     if (btnElement) {
       btnElement.disabled = false;
@@ -605,7 +605,7 @@ async function deleteNote(id) {
   try {
     await fetch(API + "/delete", {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id })
     });
 
@@ -615,7 +615,7 @@ async function deleteNote(id) {
     if (user === "3107aloksingh@gmail.com") {
       loadPending();
     }
-  } catch(e) {
+  } catch (e) {
     showToast("Error deleting note.", "error");
   }
 }
@@ -650,7 +650,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Patch showSection to re-observe when switching tabs
 const originalShowSection = window.showSection;
-window.showSection = function(sectionId) {
+window.showSection = function (sectionId) {
   if (originalShowSection) originalShowSection(sectionId);
   setTimeout(window.observeElements, 50);
 };
