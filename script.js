@@ -1011,16 +1011,17 @@ function renderPYQ(pyqs) {
   }
 
   container.innerHTML = pyqs.map(p => `
-    <div class="card file-card" style="display: flex; gap: 0.75rem; flex-direction: column;">
-      <div style="font-size: 1.05rem; font-weight: 500; word-break: break-word;">
-        📄 ${p.file_name || "PYQ Document"}
+    <div class="pyq-card">
+      <div class="pyq-card-header">
+        <div class="pyq-icon">📄</div>
+        <div class="pyq-info">
+          <div class="pyq-title" title="${p.file_name}">${p.file_name || "PYQ Document"}</div>
+          <div class="pyq-subtitle">${p.subject_code} • ${p.type ? p.type.toUpperCase() : "Exam"}</div>
+        </div>
       </div>
-      <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">
-        ${p.subject_code} - ${p.type ? p.type.toUpperCase() : "Exam"}
-      </div>
-      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-        <a href="${p.file_url}" target="_blank" class="btn-outline btn-rounded" style="text-decoration:none;"><span style="margin-right:4px;">👁</span> Preview</a>
-        <a href="${p.file_url}" download class="btn-outline btn-rounded" style="text-decoration:none; color: #38bdf8;">⬇ Download</a>
+      <div class="pyq-actions">
+        <a href="${p.file_url}" target="_blank" class="btn-outline">👁 Preview</a>
+        <a href="${p.file_url}" download class="btn-primary-gradient">⬇ Download</a>
       </div>
     </div>
   `).join("");
