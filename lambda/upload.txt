@@ -1,0 +1,226 @@
+import json
+import boto3
+import base64
+import uuid
+from datetime import datetime
+import PyPDF2
+from decimal import Decimal
+import io
+import requests
+import os
+import re
+
+# AWS
+dynamodb = boto3.resource('dynamodb')
+s3 = boto3.client('s3')
+
+TABLE_NAME = "notes-table"
+SYLLABUS_TABLE = "syllabus-table"
+BUCKET_NAME = "notes-storage-alok123"
+
+
+# ---------- GET SYLLABUS ----------
+def get_syllabus(subject_code, unit_no):
+    try:
+        table = dynamodb.Table(SYLLABUS_TABLE)
+
+        response = table.get_item(
+            Key={
+                "subject_code": subject_code,
+                "unit_no": str(unit_no)
+            }
+        )
+
+        item = response.get("Item")
+        return item.get("syllabus", "") if item else ""
+
+    except Exception as e:
+        print("SYLLABUS ERROR:", str(e))
+        return ""
+
+
+# ---------- PDF TEXT ----------
+def extract_text_from_pdf(file_content):
+    try:
+        reader = PyPDF2.PdfReader(io.BytesIO(file_content))
+        text = ""
+
+        for page in reader.pages:
+            text += page.extract_text() or ""
+
+        return text
+
+    except Exception as e:
+        print("PDF ERROR:", str(e))
+        return ""
+
+
+# ---------- AI CHECK ----------
+def check_with_ai(text, syllabus):
+    try:
+        prompt = f"""
+Compare notes with syllabus and return ONLY a number between 0 and 1.
+Also give a short 1-2-line reason.
+
+Syllabus:
+{syllabus}
+
+Notes:
+{text}
+"""
+
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {os.environ['GROQ_API_KEY']}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "llama-3.1-8b-instant",
+                "messages": [{"role": "user", "content": prompt}]
+            }
+        )
+
+        data = response.json()
+        output = data["choices"][0]["message"]["content"]
+
+        print("AI RAW:", output)
+
+        matches = re.findall(r"\d+\.\d+", output)
+        score = float(matches[-1]) if matches else 0.0
+
+        return score, output
+
+    except Exception as e:
+        print("AI ERROR:", str(e))
+        return 0.0, "AI error"
+
+
+# ---------- MAIN ----------
+def lambda_handler(event, context):
+    try:
+        print("FUNCTION STARTED")
+
+        body = event.get("body")
+        if isinstance(body, str):
+            body = json.loads(body)
+
+        subject_code = body.get("subject_code")
+        unit_no = body.get("unit_no")
+        file_name = body.get("file_name")
+        file_data = body.get("file_data")
+        uploaded_by = body.get("uploaded_by", "unknown")
+        subject_name = body.get("subject_name", "")
+        year = body.get("year", "")
+        note_type = body.get("note_type", "typed")  # 🔥 NEW
+
+        if not file_data:
+            return {
+                "statusCode": 400,
+                "body": json.dumps({"error": "file missing"})
+            }
+
+        # ---------- DECODE ----------
+        file_bytes = base64.b64decode(file_data)
+
+        # ---------- S3 UPLOAD ----------
+        file_id = str(uuid.uuid4())
+        s3_key = f"notes/{file_id}.pdf"
+
+        s3.put_object(
+            Bucket=BUCKET_NAME,
+            Key=s3_key,
+            Body=file_bytes,
+            ContentType="application/pdf"
+        )
+
+        # ---------- HANDWRITTEN → DIRECT PENDING ----------
+        if note_type == "handwritten":
+            print("✍️ Handwritten → skipping AI")
+
+            status = "pending"
+            score = 0.5
+            score_10 = 5.0
+            ai_response = "Handwritten notes - sent for admin review"
+
+        else:
+            # ---------- SYLLABUS ----------
+            syllabus = get_syllabus(subject_code, unit_no)
+
+            # ---------- TEXT ----------
+            text = extract_text_from_pdf(file_bytes)
+
+            if not text or len(text.strip()) < 50:
+                print("⚠️ No text → likely handwritten → sending to pending")
+
+                status = "pending"
+                score = 0.5
+                score_10 = 5.0
+                ai_response = "Low text content - sent for admin review"
+
+            else:
+                # ---------- AI ----------
+                if len(text) < 6000:
+                    text_for_ai = text
+                else:
+                    mid = len(text) // 2
+                    text_for_ai = (
+                        text[:3000] +
+                        text[mid-1500:mid+1500] +
+                        text[-3000:]
+                    )
+
+                score, ai_response = check_with_ai(text_for_ai, syllabus)
+                score_10 = round(score * 10, 1)
+
+                # ---------- DECISION ----------
+                if score >= 0.7:
+                    status = "approved"
+                elif score >= 0.5:
+                    status = "pending"
+                else:
+                    return {
+                        "statusCode": 200,
+                        "body": json.dumps({
+                            "message": "Rejected by AI",
+                            "score": score_10
+                        })
+                    }
+
+        # ---------- DB ----------
+        table = dynamodb.Table(TABLE_NAME)
+
+        table.put_item(
+            Item={
+                "id": file_id,
+                "subject_code": subject_code,
+                "subject_name": subject_name,
+                "year": year,
+                "unit_no": str(unit_no),
+                "file_name": file_name,
+                "file_url": f"https://{BUCKET_NAME}.s3.amazonaws.com/{s3_key}",
+                "uploaded_by": uploaded_by,
+                "status": status,
+                "match_score": Decimal(str(score)),
+                "score": Decimal(str(score_10)),
+                "ai_response": ai_response,
+                "note_type": note_type,  # 🔥 NEW
+                "created_at": datetime.utcnow().isoformat()
+            }
+        )
+
+        return {
+            "statusCode": 200,
+            "body": json.dumps({
+                "message": "Uploaded",
+                "status": status,
+                "score": score_10
+            })
+        }
+
+    except Exception as e:
+        print("ERROR:", str(e))
+        return {
+            "statusCode": 500,
+            "body": json.dumps({"error": str(e)})
+        }

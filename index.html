@@ -15,16 +15,16 @@
     <!-- 🔐 LOGIN -->
     <div id="loginDiv">
       <div class="login-box">
-        <h1>EduNex</h1>
+        <h1>EduNex 🎉</h1>
         <div class="login-fields">
-          <input id="email" class="login-input" placeholder="Email address" autocomplete="email">
-          <input id="password" class="login-input" type="password" placeholder="Password">
+          <button class="btn-primary login-btn" onclick="window.location.href='https://ap-south-1ohbqo6utl.auth.ap-south-1.amazoncognito.com/login?client_id=5od2a8lalfgpjgo3271g92lgh6&response_type=token&scope=email+openid+phone&redirect_uri=https%3A%2F%2F3107alok.github.io%2FNotes-Share%2F'">
+            Login with Cognito 🔐
+          </button>
         </div>
-        <button class="btn-primary login-btn" onclick="login()">Log In</button>
         <p class="login-footer-text">
           New user?
           <a
-            href="https://ap-south-1ohbqo6utl.auth.ap-south-1.amazoncognito.com/signup?client_id=5od2a8lalfgpjgo3271g92lgh6&redirect_uri=http%3A%2F%2Flocalhost%3A5501%2F&response_type=code&scope=email+openid+phone">
+            href="https://ap-south-1ohbqo6utl.auth.ap-south-1.amazoncognito.com/signup?client_id=5od2a8lalfgpjgo3271g92lgh6&redirect_uri=https%3A%2F%2F3107alok.github.io%2FNotes-Share%2F&response_type=token&scope=email+openid+phone">
             Create Account
           </a>
         </p>
@@ -44,7 +44,8 @@
 
         <div class="nav-center">
           <button class="btn-primary" id="btnHome" onclick="showSection('homeSection')">Home</button>
-          <button class="btn-outline" id="btnNotes" onclick="showSection('notesSection')">View Notes</button>
+          <button class="btn-outline" id="btnNotes" onclick="showSection('notesSection')">Notes</button>
+          <button class="btn-outline" id="btnPYQ" onclick="showPYQ()">📚 PYQ</button>
           <button class="btn-outline" id="btnUpload" onclick="showSection('uploadSection')">Upload Notes</button>
           <button class="btn-outline" id="btnAdmin" onclick="showSection('adminSection')" style="display: none;">Pending
             Approvals</button>
@@ -64,55 +65,54 @@
             <p style="font-size: 1.05rem; color: var(--text-muted); line-height: 1.6; padding: 1rem 0;">
               Welcome back! You can find all your study resources, upload new notes, and browse course materials
               seamlessly.
-              Select the <strong>View Notes</strong> tab to get started and find all available unit wise PDFs.
+              Select the <strong>Notes</strong> tab to get started and find all available unit wise PDFs.
             </p>
           </div>
 
           <!-- Notes Section -->
           <div class="panel" id="notesSection" style="display: none;">
-            <h2>Course Materials</h2>
+            <h2>Study Materials</h2>
 
-            <div id="semesterFilter" style="margin-bottom: 1.5rem;">
-              <select id="semesterSelect" class="semester-select" onchange="renderSubjects()">
-                <option value="" disabled selected>Select Semester</option>
-                <option value="1">Semester 1</option>
-                <option value="2">Semester 2</option>
-                <option value="3">Semester 3</option>
-                <option value="4">Semester 4</option>
-                <option value="5">Semester 5</option>
-                <option value="6">Semester 6</option>
-                <option value="7">Semester 7</option>
-                <option value="8">Semester 8</option>
+            <div id="yearFilter" style="margin-bottom: 1.5rem;">
+              <select id="yearSelect" class="semester-select" onchange="renderSubjects()">
+                <option disabled selected>Select Year</option>
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
               </select>
             </div>
 
             <div id="notesList">
-              <div class="empty-state">Please select a semester to view subjects.</div>
+              <div class="empty-state">Please select a year to view Courses.</div>
             </div>
           </div>
 
           <!-- Upload Section -->
           <div class="panel" id="uploadSection" style="display: none;">
-            <h2>Upload Notes</h2>
-            <form id="uploadForm">
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+              <button class="btn-primary" id="btnUploadNotes" onclick="showUpload('notes')">📄 Upload Notes</button>
+              <button class="btn-outline" id="btnUploadPYQ" onclick="showUpload('pyq')">📚 PYQ</button>
+              <button class="btn-outline" id="btnUploadSyllabus" onclick="showUpload('syllabus')">📘 Syllabus</button>
+            </div>
+
+            <div id="upload-notes">
+              <h2>Upload Notes</h2>
+              <form id="uploadForm">
               <!-- Hidden inputs to maintain API payload compatibility -->
-              <input type="hidden" id="semester">
+              <input type="hidden" id="year">
               <input type="hidden" id="subject_code">
               <input type="hidden" id="subject_name">
               <input type="hidden" id="unit_no">
               <input type="hidden" id="unit_name">
 
-              <!-- Step 1: Semester -->
-              <select id="up_semester" class="semester-select" onchange="up_onSemesterChange()" required>
-                <option value="" disabled selected>1. Select Semester</option>
-                <option value="1">Semester 1</option>
-                <option value="2">Semester 2</option>
-                <option value="3">Semester 3</option>
-                <option value="4">Semester 4</option>
-                <option value="5">Semester 5</option>
-                <option value="6">Semester 6</option>
-                <option value="7">Semester 7</option>
-                <option value="8">Semester 8</option>
+              <!-- Step 1: Year -->
+              <select id="up_year" class="semester-select" onchange="up_onYearChange()" required>
+                <option disabled selected>1. Select Year</option>
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
               </select>
 
               <!-- Step 2: Subject -->
@@ -146,7 +146,7 @@
                   Name</label>
                 <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: space-between;">
                   <input id="up_unit_name_display" placeholder="Enter Unit Name (e.g. Introduction)"
-                    oninput="up_onUnitNameChange()" required style="flex: 1;">
+                    oninput="up_onUnitNameChange()" style="flex: 1;">
                   <span id="unit_locked_label"
                     style="display: none; background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid var(--success); padding: 0.75rem 1rem; border-radius: var(--radius); font-size: 0.85rem; font-weight: 600; white-space: nowrap;">🔒
                     Locked (Approved)</span>
@@ -155,10 +155,56 @@
 
               <!-- Step 4: File Upload -->
               <div id="up_file_div" style="display: none; width: 100%; flex-direction: column; gap: 1rem;">
-                <input type="file" id="file" required style="width: 100%;">
+                <input type="file" id="file" required style="width: 100%;" multiple>
                 <button type="submit" class="btn-primary" style="width: 100%;">Upload Document</button>
               </div>
             </form>
+            </div>
+
+            <div id="upload-pyq" style="display: none;">
+              <h2>Upload PYQ</h2>
+              <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <select id="up_pyq_year" class="semester-select" onchange="up_pyq_onYearChange()">
+                  <option disabled selected>1. Select Year</option>
+                  <option value="1">1st Year</option>
+                  <option value="2">2nd Year</option>
+                  <option value="3">3rd Year</option>
+                  <option value="4">4th Year</option>
+                </select>
+                <select id="up_pyq_subject" class="semester-select" style="display: none;" onchange="up_pyq_onSubjectChange()">
+                  <option value="" disabled selected>2. Select Subject</option>
+                </select>
+                <div id="up_pyq_details_div" style="display: none; flex-direction: column; gap: 1rem;">
+                  <select id="pyqType" class="semester-select">
+                    <option value="" disabled selected>3. Select Type</option>
+                    <option value="aktu">AKTU</option>
+                    <option value="mse">MSE</option>
+                    <option value="ese">ESE</option>
+                  </select>
+                  <input type="file" id="pyqFile" style="width: 100%;">
+                  <button id="uploadPYQBtn" class="btn-primary" style="width: 100%;">Upload PYQ</button>
+                </div>
+              </div>
+            </div>
+
+            <div id="upload-syllabus" style="display: none;">
+              <h2>Upload Syllabus</h2>
+              <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <select id="sy_year" class="semester-select">
+                  <option value="" disabled selected>Select Year</option>
+                  <option value="1">1st Year</option>
+                  <option value="2">2nd Year</option>
+                  <option value="3">3rd Year</option>
+                  <option value="4">4th Year</option>
+                </select>
+
+                <input type="text" id="sy_code" placeholder="Subject Code (e.g. CS301)" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-light); border-radius: var(--radius); background: var(--bg-main); color: var(--text-color);">
+                <input type="text" id="sy_name" placeholder="Subject Name (e.g. Data Structures)" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-light); border-radius: var(--radius); background: var(--bg-main); color: var(--text-color);">
+
+                <input type="file" id="sy_file" style="width: 100%;">
+                <button onclick="uploadSyllabus()" class="btn-primary" style="width: 100%;">Upload Syllabus</button>
+              </div>
+            </div>
           </div>
 
           <!-- Admin Pending Section -->
@@ -166,6 +212,35 @@
             <h2>Pending Approvals (Admin)</h2>
             <div id="pendingList" class="pending-grid">
               <div class="empty-state">Loading pending files...</div>
+            </div>
+          </div>
+
+          <!-- PYQ Section -->
+          <div class="panel" id="pyq-section" style="display: none;">
+            <h2>📚 PYQ Section</h2>
+
+            <div style="margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+              <select id="pyqYearSelect" class="semester-select" onchange="pyq_onYearChange()">
+                <option disabled selected>1. Select Year</option>
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
+              </select>
+              
+              <select id="pyqSubjectSelect" class="semester-select" onchange="pyq_onSubjectChange()" style="display: none;">
+                <option value="" disabled selected>2. Select Subject</option>
+              </select>
+              
+              <div id="pyqTypeButtons" style="display: none; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="btn-outline" onclick="loadPYQ('aktu')">AKTU</button>
+                <button class="btn-outline" onclick="loadPYQ('mse')">MSE</button>
+                <button class="btn-outline" onclick="loadPYQ('ese')">ESE</button>
+              </div>
+            </div>
+
+            <div id="pyq-container" class="pending-grid">
+              <div class="empty-state" style="grid-column: 1 / -1;">Select a year and subject to load PYQs.</div>
             </div>
           </div>
 
@@ -182,6 +257,31 @@
     <p>© 2026 EduNexa | All Rights Reserved</p>
     <p>Developed by Alok Singh & Amit Kumar</p>
   </footer>
+
+  <!-- AI Upload Modal -->
+  <div id="aiModal" class="ai-modal-overlay" style="display: none;">
+    <div class="ai-modal-content">
+      
+      <!-- Loading State -->
+      <div id="aiModalLoading" class="ai-modal-state">
+        <div class="ai-spinner"></div>
+        <h3 style="margin-top: 1.5rem; color: var(--text-main);">Analyzing your notes...</h3>
+        <p id="aiProgressText" style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">Processing document</p>
+        <div class="ai-progress-bar-container" style="margin-top: 1.2rem;">
+          <div id="aiProgressBar" class="ai-progress-bar" style="width: 0%;"></div>
+        </div>
+      </div>
+      
+      <!-- Result State -->
+      <div id="aiModalResult" class="ai-modal-state" style="display: none;">
+        <div id="aiModalIcon" class="ai-result-icon">✅</div>
+        <h3 id="aiModalResultTitle" style="margin-top: 1rem; color: var(--text-main);">Notes Approved!</h3>
+        <p id="aiModalResultText" style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.5rem; margin-bottom: 1.5rem;">Your notes are now live.</p>
+        <button class="btn-primary" onclick="closeAiModal()" style="width: 100%;">Close</button>
+      </div>
+
+    </div>
+  </div>
 
 </body>
 

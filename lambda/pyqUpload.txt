@@ -1,0 +1,66 @@
+import json
+import boto3
+import base64
+import uuid
+from datetime import datetime
+
+dynamodb = boto3.resource('dynamodb')
+s3 = boto3.client('s3')
+
+TABLE_NAME = "pyq-table"
+BUCKET_NAME = "notes-storage-alok123"
+
+def lambda_handler(event, context):
+    try:
+        body = json.loads(event["body"])
+
+        subject_code = body.get("subject_code")
+        subject_name = body.get("subject_name")
+        pyq_type = body.get("type")  # aktu/mse/ese
+        file_name = body.get("file_name")
+        file_data = body.get("file_data")
+        uploaded_by = body.get("uploaded_by", "unknown")
+
+        file_bytes = base64.b64decode(file_data)
+
+        file_id = str(uuid.uuid4())
+        s3_key = f"pyq/{file_id}.pdf"
+
+        # upload to S3
+        s3.put_object(
+            Bucket=BUCKET_NAME,
+            Key=s3_key,
+            Body=file_bytes,
+            ContentType="application/pdf"
+        )
+
+        file_url = f"https://{BUCKET_NAME}.s3.amazonaws.com/{s3_key}"
+
+        # save to DB
+        table = dynamodb.Table(TABLE_NAME)
+
+        table.put_item(
+            Item={
+                "id": file_id,
+                "subject_code": subject_code,
+                "subject_name": subject_name,
+                "type": pyq_type,
+                "file_name": file_name,
+                "file_url": file_url,
+                "uploaded_by": uploaded_by,
+                "created_at": datetime.utcnow().isoformat()
+            }
+        )
+
+        return {
+            "statusCode": 200,
+            "headers": {"Access-Control-Allow-Origin": "*"},
+            "body": json.dumps({"message": "PYQ uploaded"})
+        }
+
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "headers": {"Access-Control-Allow-Origin": "*"},
+            "body": json.dumps({"error": str(e)})
+        }
