@@ -1001,6 +1001,13 @@ async function loadPYQ(type) {
   }
 }
 
+const typeLabelMap = {
+  aktu: "AKTU",
+  mse: "MSE",
+  ese: "ESE",
+  qb: "Question Bank"
+};
+
 function renderPYQ(pyqs) {
   const container = document.getElementById("pyq-container");
   if (!container) return;
@@ -1016,7 +1023,7 @@ function renderPYQ(pyqs) {
         <div class="pyq-icon">📄</div>
         <div class="pyq-info">
           <div class="pyq-title" title="${p.file_name}">${p.file_name || "PYQ Document"}</div>
-          <div class="pyq-subtitle">${p.subject_code} • ${p.type ? p.type.toUpperCase() : "Exam"}</div>
+          <div class="pyq-subtitle">${p.subject_code} • ${typeLabelMap[p.type] || (p.type ? p.type.toUpperCase() : "Exam")}</div>
         </div>
       </div>
       <div class="pyq-actions">
