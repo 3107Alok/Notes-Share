@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title> EduNex </title>
+  <title>Notes App</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -15,10 +15,10 @@
     <!-- 🔐 LOGIN -->
     <div id="loginDiv">
       <div class="login-box">
-        <h1>EduNex </h1>
+        <h1>EduNex 🎉</h1>
         <div class="login-fields">
           <button class="btn-primary login-btn" onclick="window.location.href='https://ap-south-1ohbqo6utl.auth.ap-south-1.amazoncognito.com/login?client_id=5od2a8lalfgpjgo3271g92lgh6&response_type=token&scope=email+openid+phone&redirect_uri=https%3A%2F%2F3107alok.github.io%2FNotes-Share%2F'">
-            Login with AWS Cognito 🔐
+            Login with Cognito 🔐
           </button>
         </div>
         <p class="login-footer-text">
@@ -180,6 +180,7 @@
                     <option value="aktu">AKTU</option>
                     <option value="mse">MSE</option>
                     <option value="ese">ESE</option>
+                    <option value="qb">Question Bank</option>
                   </select>
                   <input type="file" id="pyqFile" style="width: 100%;">
                   <button id="uploadPYQBtn" class="btn-primary" style="width: 100%;">Upload PYQ</button>
@@ -236,6 +237,7 @@
                 <button class="btn-outline" onclick="loadPYQ('aktu')">AKTU</button>
                 <button class="btn-outline" onclick="loadPYQ('mse')">MSE</button>
                 <button class="btn-outline" onclick="loadPYQ('ese')">ESE</button>
+                <button class="btn-outline" onclick="loadPYQ('qb')">Question Bank</button>
               </div>
             </div>
 
