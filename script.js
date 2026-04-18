@@ -1051,6 +1051,7 @@ async function uploadPYQ() {
   const fileInput = document.getElementById("pyqFile");
   const subjectSelect = document.getElementById("up_pyq_subject");
   const type = document.getElementById("pyqType").value;
+  const btn = document.getElementById("uploadPYQBtn");
 
   const file = fileInput.files[0];
 
@@ -1067,8 +1068,10 @@ async function uploadPYQ() {
     return;
   }
   
-  const subject_code = subjectSelect.value;
+  if (btn) btn.disabled = true;
+  openAiModal();
 
+  const subject_code = subjectSelect.value;
   const reader = new FileReader();
 
   reader.onload = async () => {
@@ -1088,22 +1091,23 @@ async function uploadPYQ() {
       });
 
       if (!res || !res.ok) {
-        showToast("Upload failed", "error");
+        showAiResult(false, "Upload failed");
+        if (btn) btn.disabled = false;
         return;
       }
 
-      const data = await res.json();
-      console.log(data);
-
-      showToast("Upload done", "success");
+      await res.json();
+      showAiResult(true, "PYQ Uploaded Successfully");
       
       fileInput.value = "";
       document.getElementById("pyqType").value = "";
       document.getElementById("up_pyq_subject").style.display = "none";
       document.getElementById("up_pyq_details_div").style.display = "none";
       document.getElementById("up_pyq_year").selectedIndex = 0;
+      if (btn) btn.disabled = false;
     } catch (e) {
-      showToast("Network Error", "error");
+      showAiResult(false, "Network Error");
+      if (btn) btn.disabled = false;
     }
   };
 
@@ -1148,8 +1152,10 @@ async function uploadSyllabus() {
   const btn = document.querySelector('button[onclick="uploadSyllabus()"]');
   if (btn) {
     btn.disabled = true;
-    btn.innerText = "Uploading...";
+    btn.innerText = "Uploading..."; // For visual feedback on btn
   }
+  
+  openAiModal();
 
   const reader = new FileReader();
 
@@ -1168,16 +1174,16 @@ async function uploadSyllabus() {
       });
 
       if (res && res.ok) {
-        showToast("Syllabus uploaded 🚀", "success");
+        showAiResult(true, "Syllabus Uploaded Successfully");
         fileInput.value = "";
         document.getElementById("sy_code").value = "";
         document.getElementById("sy_name").value = "";
         document.getElementById("sy_year").value = "";
       } else {
-        showToast("Upload failed", "error");
+        showAiResult(false, "Upload failed");
       }
     } catch(e) {
-      showToast("Network Error", "error");
+      showAiResult(false, "Network Error");
     }
 
     if (btn) {
@@ -1215,8 +1221,11 @@ function openAiModal() {
   
   const bar = document.getElementById("aiProgressBar");
   const txt = document.getElementById("aiProgressText");
+  const heading = document.querySelector("#aiModalLoading h3");
+  
+  if (heading) heading.innerText = "Uploading...";
   bar.style.width = "0%";
-  txt.innerText = "Processing document";
+  txt.innerText = "Uploading file...";
   
   let progress = 0;
   aiInterval = setInterval(() => {
@@ -1224,9 +1233,8 @@ function openAiModal() {
     if (progress >= 90) progress = 90;
     bar.style.width = `${progress}%`;
     
-    if (progress > 30) txt.innerText = "Extracting text from PDF...";
-    if (progress > 60) txt.innerText = "Running AI syllabus check...";
-    if (progress > 85) txt.innerText = "Finalizing results...";
+    if (progress > 30) txt.innerText = "Processing...";
+    if (progress > 70) txt.innerText = "Finalizing...";
   }, 300);
 }
 
@@ -1237,7 +1245,7 @@ function closeAiModal() {
 function showAiResult(success, message) {
   clearInterval(aiInterval);
   document.getElementById("aiProgressBar").style.width = "100%";
-  document.getElementById("aiProgressText").innerText = "Done!";
+  document.getElementById("aiProgressText").innerText = success ? "Done!" : "Error";
   
   setTimeout(() => {
     document.getElementById("aiModalLoading").style.display = "none";
@@ -1249,9 +1257,9 @@ function showAiResult(success, message) {
     
     if (success) {
       icon.innerText = "✅";
-      title.innerText = "Notes Approved!";
+      title.innerText = "Upload Complete";
       title.style.color = "var(--success)";
-      text.innerText = "Your notes are now live.";
+      text.innerText = message || "Your file has been successfully uploaded.";
       setTimeout(() => {
         closeAiModal();
       }, 2000);
@@ -1259,7 +1267,7 @@ function showAiResult(success, message) {
       icon.innerText = "❌";
       title.innerText = "Upload Failed";
       title.style.color = "var(--danger)";
-      text.innerText = message || "Your notes do not match the syllabus for this unit.\nPlease upload correct notes with proper course content.";
+      text.innerText = message || "An error occurred. Please try again.";
     }
   }, 500);
 }
